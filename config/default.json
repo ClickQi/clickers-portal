@@ -1,5 +1,5 @@
 {
-  "mongoURI": "",
+  "mongoURI": "mongodb+srv://luisedu:pa$$w0rd827@hero-yy7n9.azure.mongodb.net/portal_clickers?retryWrites=true&w=majority",
   "jwtSecret": "secret",
   "githubClientId": "",
   "githubSecret": ""

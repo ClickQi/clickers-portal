@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
+  idPeopleTeamwork: {
+    type: Number,
+    required: false
   },
   email: {
     type: String,
@@ -14,8 +14,9 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  avatar: {
-    type: String
+  idAccessLevel: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'AccessLevel'
   },
   date: {
     type: Date,

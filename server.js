@@ -14,7 +14,11 @@ app.use(express.json({ extended: false }));
 app.use('/api/users', require('./routes/api/users'));
 app.use('/api/auth', require('./routes/api/auth'));
 app.use('/api/profile', require('./routes/api/profile'));
-app.use('/api/posts', require('./routes/api/posts'));
+app.use('/api/accesslevel', require('./routes/api/accessLevel'));
+app.use('/api/evaluationskill', require('./routes/api/evaluationSkill'));
+app.use('/api/menuoption', require('./routes/api/menuOption'));
+app.use('/api/skill', require('./routes/api/skill'));
+
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {

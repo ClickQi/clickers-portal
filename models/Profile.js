@@ -1,31 +1,33 @@
 const mongoose = require('mongoose');
 
 const ProfileSchema = new mongoose.Schema({
-  user: {
+  idUser: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'user'
   },
-  company: {
+  firstName: {
     type: String
   },
-  website: {
+  lastName: {
+    type: String
+  },
+  ocupation: {
+    type: String
+  },
+  picture: {
+    type: String
+  },
+  company: {
     type: String
   },
   location: {
     type: String
   },
-  status: {
-    type: String,
-    required: true
+  active: {
+    type: Boolean,
+    default: true
   },
-  skills: {
-    type: [String],
-    required: true
-  },
-  bio: {
-    type: String
-  },
-  githubusername: {
+  githubUsername: {
     type: String
   },
   experience: [
@@ -33,13 +35,6 @@ const ProfileSchema = new mongoose.Schema({
       title: {
         type: String,
         required: true
-      },
-      company: {
-        type: String,
-        required: true
-      },
-      location: {
-        type: String
       },
       from: {
         type: Date,
@@ -59,15 +54,11 @@ const ProfileSchema = new mongoose.Schema({
   ],
   education: [
     {
+      title: {
+        type: String,
+        required: true
+      },
       school: {
-        type: String,
-        required: true
-      },
-      degree: {
-        type: String,
-        required: true
-      },
-      fieldofstudy: {
         type: String,
         required: true
       },
@@ -87,23 +78,29 @@ const ProfileSchema = new mongoose.Schema({
       }
     }
   ],
-  social: {
-    youtube: {
-      type: String
-    },
-    twitter: {
-      type: String
-    },
-    facebook: {
-      type: String
-    },
-    linkedin: {
-      type: String
-    },
-    instagram: {
-      type: String
+  social: [
+    {
+      title: {
+        type: String,
+        required: true
+      },
+      url: {
+        type: String,
+        required: true
+      }
     }
-  },
+  ],
+  profileSkill: [
+    {
+      idSkill: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'skill'
+      },
+      url: {
+        type: String
+      }
+    }
+  ],
   date: {
     type: Date,
     default: Date.now
