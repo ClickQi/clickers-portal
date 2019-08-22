@@ -7,7 +7,8 @@ const { check, validationResult } = require('express-validator/check');
 
 const Profile = require('../../models/Profile');
 const User = require('../../models/User');
-const Post = require('../../models/Post');
+const EvaluationSkill = require('../../models/EvaluationSkill');
+const Skill = require('../../models/Skill');
 
 // @route    GET api/profile/me
 // @desc     Get current users profile
@@ -38,10 +39,7 @@ router.post(
   [
     auth,
     [
-      check('status', 'Status is required')
-        .not()
-        .isEmpty(),
-      check('skills', 'Skills is required')
+      check('firstName', 'firstName is required')
         .not()
         .isEmpty()
     ]
@@ -53,48 +51,64 @@ router.post(
     }
 
     const {
+      firstName,
+      lastName,
+      ocupation,
+      picture,
       company,
-      website,
       location,
-      bio,
-      status,
-      githubusername,
-      skills,
-      youtube,
-      facebook,
-      twitter,
-      instagram,
-      linkedin
+      active,
+      githubUsername,
+      experience,
+      education,
+      social,
+      profileSkill
     } = req.body;
 
     // Build profile object
     const profileFields = {};
-    profileFields.user = req.user.id;
+    profileFields.profileSkill = [];
+    profileFields.experience = [];
+    profileFields.education = [];
+    profileFields.social = [];
+
+    profileFields.idUser = req.user.id;
+    if (firstName) profileFields.firstName = firstName;
+    if (lastName) profileFields.lastName = lastName;
+    if (ocupation) profileFields.ocupation = ocupation;
+    if (picture) profileFields.picture = picture;
     if (company) profileFields.company = company;
-    if (website) profileFields.website = website;
     if (location) profileFields.location = location;
-    if (bio) profileFields.bio = bio;
-    if (status) profileFields.status = status;
-    if (githubusername) profileFields.githubusername = githubusername;
-    if (skills) {
-      profileFields.skills = skills.split(',').map(skill => skill.trim());
+    if (active) profileFields.active = active;
+    if (githubUsername) profileFields.githubUsername = githubUsername;
+    if (profileSkill) {
+      profileSkill.forEach(element => {
+        profileFields.profileSkill.push(element);
+      });
+    }
+    if(experience) {
+      experience.forEach(element => {
+        profileFields.experience.push(element);
+      });
+    }
+    if(education) {
+      education.forEach(element => {
+        profileFields.education.push(element);
+      });
+    }
+    if(social) {
+      social.forEach(element => {
+        profileFields.social.push(element);
+      });
     }
 
-    // Build social object
-    profileFields.social = {};
-    if (youtube) profileFields.social.youtube = youtube;
-    if (twitter) profileFields.social.twitter = twitter;
-    if (facebook) profileFields.social.facebook = facebook;
-    if (linkedin) profileFields.social.linkedin = linkedin;
-    if (instagram) profileFields.social.instagram = instagram;
-
     try {
-      let profile = await Profile.findOne({ user: req.user.id });
+      let profile = await Profile.findOne({ idUser: req.user.id });
 
       if (profile) {
         // Update
         profile = await Profile.findOneAndUpdate(
-          { user: req.user.id },
+          { idUser: req.user.id },
           { $set: profileFields },
           { new: true }
         );
@@ -127,13 +141,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route    GET api/profile/user/:user_id
-// @desc     Get profile by user ID
-// @access   Public
+// // @route    GET api/profile/user/:user_id
+// // @desc     Get profile by user ID
+// // @access   Public
 router.get('/user/:user_id', async (req, res) => {
   try {
     const profile = await Profile.findOne({
-      user: req.params.user_id
+      idUser: req.params.user_id
     }).populate('user', ['name', 'avatar']);
 
     if (!profile) return res.status(400).json({ msg: 'Profile not found' });
@@ -148,17 +162,21 @@ router.get('/user/:user_id', async (req, res) => {
   }
 });
 
-// @route    DELETE api/profile
-// @desc     Delete profile, user & posts
-// @access   Private
-router.delete('/', auth, async (req, res) => {
+// // @route    DELETE api/profile/:profile_id
+// // @desc     Delete profile, user & posts
+// // @access   Private
+router.delete('/:profile_id', auth, async (req, res) => {
   try {
-    // Remove user posts
-    await Post.deleteMany({ user: req.user.id });
+    // Remove evaluations
+    await EvaluationSkill.deleteMany({ idProfile: req.params.profile_id });
+
+    // Remove skill log of this profile
+    await Skill.updateMany({ 'logSkill.idProfile': req.params.profile_id },
+    { $pull: { logSkill: {idProfile: req.params.profile_id }}},
+    {multi: true});
+
     // Remove profile
-    await Profile.findOneAndRemove({ user: req.user.id });
-    // Remove user
-    await User.findOneAndRemove({ _id: req.user.id });
+    await Profile.findOneAndRemove({ _id: req.params.profile_id });
 
     res.json({ msg: 'User deleted' });
   } catch (err) {
@@ -167,18 +185,15 @@ router.delete('/', auth, async (req, res) => {
   }
 });
 
-// @route    PUT api/profile/experience
-// @desc     Add profile experience
-// @access   Private
+// // @route    PUT api/profile/experience
+// // @desc     Add profile experience
+// // @access   Private
 router.put(
   '/experience',
   [
     auth,
     [
       check('title', 'Title is required')
-        .not()
-        .isEmpty(),
-      check('company', 'Company is required')
         .not()
         .isEmpty(),
       check('from', 'From date is required')
@@ -194,8 +209,6 @@ router.put(
 
     const {
       title,
-      company,
-      location,
       from,
       to,
       current,
@@ -204,8 +217,6 @@ router.put(
 
     const newExp = {
       title,
-      company,
-      location,
       from,
       to,
       current,
@@ -213,7 +224,7 @@ router.put(
     };
 
     try {
-      const profile = await Profile.findOne({ user: req.user.id });
+      const profile = await Profile.findOne({ idUser: req.user.id });
 
       profile.experience.unshift(newExp);
 
@@ -227,12 +238,12 @@ router.put(
   }
 );
 
-// @route    DELETE api/profile/experience/:exp_id
-// @desc     Delete experience from profile
-// @access   Private
+// // @route    DELETE api/profile/experience/:exp_id
+// // @desc     Delete experience from profile
+// // @access   Private
 router.delete('/experience/:exp_id', auth, async (req, res) => {
   try {
-    const profile = await Profile.findOne({ user: req.user.id });
+    const profile = await Profile.findOne({ idUser: req.user.id });
 
     // Get remove index
     const removeIndex = profile.experience
@@ -250,21 +261,15 @@ router.delete('/experience/:exp_id', auth, async (req, res) => {
   }
 });
 
-// @route    PUT api/profile/education
-// @desc     Add profile education
-// @access   Private
+// // @route    PUT api/profile/education
+// // @desc     Add profile education
+// // @access   Private
 router.put(
   '/education',
   [
     auth,
     [
       check('school', 'School is required')
-        .not()
-        .isEmpty(),
-      check('degree', 'Degree is required')
-        .not()
-        .isEmpty(),
-      check('fieldofstudy', 'Field of study is required')
         .not()
         .isEmpty(),
       check('from', 'From date is required')
@@ -279,9 +284,8 @@ router.put(
     }
 
     const {
+      title,
       school,
-      degree,
-      fieldofstudy,
       from,
       to,
       current,
@@ -289,9 +293,8 @@ router.put(
     } = req.body;
 
     const newEdu = {
+      title,
       school,
-      degree,
-      fieldofstudy,
       from,
       to,
       current,
@@ -299,7 +302,7 @@ router.put(
     };
 
     try {
-      const profile = await Profile.findOne({ user: req.user.id });
+      const profile = await Profile.findOne({ idUser: req.user.id });
 
       profile.education.unshift(newEdu);
 
@@ -313,12 +316,12 @@ router.put(
   }
 );
 
-// @route    DELETE api/profile/education/:edu_id
-// @desc     Delete education from profile
-// @access   Private
+// // @route    DELETE api/profile/education/:edu_id
+// // @desc     Delete education from profile
+// // @access   Private
 router.delete('/education/:edu_id', auth, async (req, res) => {
   try {
-    const profile = await Profile.findOne({ user: req.user.id });
+    const profile = await Profile.findOne({ idUser: req.user.id });
 
     // Get remove index
     const removeIndex = profile.education
@@ -336,9 +339,9 @@ router.delete('/education/:edu_id', auth, async (req, res) => {
   }
 });
 
-// @route    GET api/profile/github/:username
-// @desc     Get user repos from Github
-// @access   Public
+// // @route    GET api/profile/github/:username
+// // @desc     Get user repos from Github
+// // @access   Public
 router.get('/github/:username', (req, res) => {
   try {
     const options = {
